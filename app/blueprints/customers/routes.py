@@ -1,3 +1,5 @@
+from linecache import cache
+
 from flask import request, jsonify
 from marshmallow import ValidationError
 from app.models import db, Customer, Service_Tickets
@@ -25,6 +27,7 @@ def create_customer():
 
 # Retrieve all customers
 @customers_bp.route('/', methods=['GET'])
+@cache.cached(timeout=60)  # Cache this endpoint for 60 seconds
 def get_customers():
     customers = db.session.execute(db.select(Customer)).scalars().all()
     return customers_schema.jsonify(customers), 200

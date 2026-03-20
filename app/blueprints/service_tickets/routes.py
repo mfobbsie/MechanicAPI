@@ -1,3 +1,5 @@
+from linecache import cache
+
 from flask import request, jsonify
 from marshmallow import ValidationError
 from app.models import db, Mechanic, Service_Tickets
@@ -32,6 +34,7 @@ def create_service_ticket():
 
 # Retrieve all service tickets
 @service_tickets_bp.route('/', methods=['GET'])
+@cache.cached(timeout=60)  # Cache this endpoint for 60 seconds
 def get_service_tickets():
     tickets = db.session.execute(db.select(Service_Tickets)).scalars().all()
     return service_tickets_schema.jsonify(tickets), 200
