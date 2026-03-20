@@ -3,6 +3,7 @@ from marshmallow import ValidationError
 from app.models import db, Mechanic, Service_Tickets
 from .schemas import service_ticket_schema, service_tickets_schema
 from . import service_tickets_bp
+from app.extensions import limiter
 
 # Create a new service ticket
 @service_tickets_bp.route('/', methods=['POST'])
@@ -66,6 +67,7 @@ def update_service_ticket(ticket_id):
 
 # Assign a mechanic to a service ticket
 @service_tickets_bp.route('/<int:ticket_id>/assign_mechanic/<int:mechanic_id>', methods=['POST'])
+@limiter.limit("10 per minute")
 def assign_mechanic(ticket_id, mechanic_id):
     ticket = db.session.get(Service_Tickets, ticket_id)
     if not ticket:
@@ -86,6 +88,7 @@ def assign_mechanic(ticket_id, mechanic_id):
 
 # Remove a mechanic from a service ticket
 @service_tickets_bp.route('/<int:ticket_id>/remove_mechanic/<int:mechanic_id>', methods=['PUT'])
+@limiter.limit("10 per minute")
 def remove_mechanic(ticket_id, mechanic_id):
     ticket = db.session.get(Service_Tickets, ticket_id)
     if not ticket:
