@@ -1,6 +1,7 @@
 from flask import request, jsonify
 from marshmallow import ValidationError
 from app.models import db, Mechanic, Service_Tickets
+from app.utils.util import encode_token, token_required
 
 # mechanic schemas
 from .schemas import mechanic_schema, mechanics_schema
@@ -9,6 +10,31 @@ from .schemas import mechanic_schema, mechanics_schema
 from app.blueprints.service_tickets.schemas import service_tickets_schema
 
 from . import mechanics_bp
+
+@mechanics_bp.route('/login', methods=['POST'])
+def login():
+    try:
+        credentials = request.json
+        username = credentials['email']
+        password = credentials['password']
+    except KeyError:
+        return jsonify({'messages': "Invalid payload, expecting username and password"}), 400
+    
+    query = db.select(Mechanic).where(Mechanic.email == username)
+    mechanic = db.session.execute(query).scalar_one_or_none()
+    
+    if mechanic and mechanic.password == password:
+        auth_token = encode_token(mechanic.id, mechanic.role.role_name)
+        
+        response = {
+            'status': 'success',
+            'message': 'Login successful',
+            'auth_token': auth_token
+        }
+        return jsonify(response), 200
+    else:
+        return jsonify({'message': 'Invalid email or password'}), 401
+
 
 # Create a new mechanic
 @mechanics_bp.route('/', methods=['POST'])
@@ -47,6 +73,7 @@ def get_mechanic(mechanic_id):
 
 # Retrieve all service tickets assigned to a mechanic
 @mechanics_bp.route('/<int:mechanic_id>/service_tickets', methods=['GET'])
+@token_required
 def get_mechanic_service_tickets(mechanic_id):
     mechanic = db.session.get(Mechanic, mechanic_id)
     if not mechanic:
@@ -58,7 +85,8 @@ def get_mechanic_service_tickets(mechanic_id):
 
 # Update a mechanic
 @mechanics_bp.route('/<int:mechanic_id>', methods=['PUT'])
-def update_mechanic(mechanic_id):
+@token_required
+def update_mechanic(user_id, mechanic_id):
     mechanic = db.session.get(Mechanic, mechanic_id)
     if not mechanic:
         return jsonify({"message": "Mechanic not found"}), 404
@@ -77,7 +105,8 @@ def update_mechanic(mechanic_id):
 
 # Delete a mechanic
 @mechanics_bp.route('/<int:mechanic_id>', methods=['DELETE'])
-def delete_mechanic(mechanic_id):
+@token_required
+def delete_mechanic(user_id, mechanic_id):
     mechanic = db.session.get(Mechanic, mechanic_id)
     if not mechanic:
         return jsonify({"message": "Mechanic not found"}), 404
