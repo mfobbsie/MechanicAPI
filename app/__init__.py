@@ -6,6 +6,7 @@ from app.extensions import ma, limiter, cache, migrate
 from app.blueprints.customers import customers_bp
 from app.blueprints.mechanics import mechanics_bp
 from app.blueprints.service_tickets import service_tickets_bp
+from app.blueprints.inventory import inventory_bp
 from app.cli import register_cli
 
 
@@ -27,5 +28,6 @@ def create_app():
     app.register_blueprint(customers_bp, url_prefix="/customers")
     app.register_blueprint(mechanics_bp, url_prefix="/mechanics")
     app.register_blueprint(service_tickets_bp, url_prefix="/service_tickets")
+    app.register_blueprint(inventory_bp, url_prefix="/inventory")
 
     return app

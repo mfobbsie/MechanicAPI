@@ -2,7 +2,7 @@
 
 from app.extensions import ma
 from app.models import Service_Tickets, db
-
+from marshmallow import fields
 
 class ServiceTicketSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -11,6 +11,14 @@ class ServiceTicketSchema(ma.SQLAlchemyAutoSchema):
         sqla_session = db.session
         include_fk = True
 
+    # Nested relationships
+    customer = fields.Nested("CustomerSchema", only=("id", "name", "email"))
+    mechanics = fields.Nested("MechanicSchema", many=True, only=("id", "name", "email"))
+    inventory_service_tickets = fields.Nested(
+        "InventoryServiceTicketSchema",
+        many=True
+    )
 
 service_ticket_schema = ServiceTicketSchema()
 service_tickets_schema = ServiceTicketSchema(many=True)
+

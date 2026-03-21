@@ -87,6 +87,11 @@ class Service_Tickets(Base):
         back_populates="service_tickets"
     )
 
+    inventory_service_tickets: Mapped[list["Inventory_Service_Ticket"]] = relationship(
+        "Inventory_Service_Ticket",
+        back_populates="service_tickets",
+        cascade="all, delete-orphan"
+    )
 
 # -----------------------------
 # MECHANIC MODEL
@@ -108,7 +113,39 @@ class Mechanic(Base):
         "Service_Tickets",
         secondary=mechanic_tickets,
         back_populates="mechanics"
+    
+)
+
+# -----------------------------
+# INVENTORY MODEL
+# -----------------------------
+class Inventory(Base):
+    __tablename__ = "inventory"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    item_name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    price: Mapped[float] = mapped_column(Float, nullable=False)
+
+    inventory_service_tickets: Mapped[list["Inventory_Service_Ticket"]] = relationship(
+        "Inventory_Service_Ticket",
+        back_populates="inventory",
+        cascade="all, delete-orphan"
     )
+
+# -----------------------------
+# INVENTORY_SERVICE_TICKET MODEL
+# -----------------------------
+class Inventory_Service_Ticket(Base):
+    __tablename__ = "inventory_service_ticket"
+
+    inventory_id: Mapped[int] = mapped_column(ForeignKey("inventory.id"), primary_key=True)
+    service_ticket_id: Mapped[int] = mapped_column(ForeignKey("service_tickets.id"), primary_key=True)
+    quantity_used: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    inventory: Mapped["Inventory"] = relationship("Inventory", back_populates="inventory_service_tickets")
+    service_tickets: Mapped["Service_Tickets"] = relationship("Service_Tickets", back_populates="inventory_service_tickets")
+
 
 
 __all__ = [
@@ -116,5 +153,5 @@ __all__ = [
     "Customer",
     "Mechanic",
     "Service_Tickets",
-    "Role",
+    "Inventory",
 ]
