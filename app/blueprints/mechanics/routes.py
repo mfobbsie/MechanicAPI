@@ -2,13 +2,13 @@
 
 from flask import request, jsonify
 from marshmallow import ValidationError
-from werkzeug.security import check_password_hash
-from app.models import db, Mechanic, Service_Tickets
+from app.models import db, Mechanic, Service_Tickets, mechanic_tickets
 from .schemas import mechanic_schema, mechanics_schema
 from app.blueprints.service_tickets.schemas import service_tickets_schema
 from . import mechanics_bp
 from app.utils.util import encode_token, token_required
 from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import func
 
 # -----------------------------
 # LOGIN
@@ -45,7 +45,7 @@ def login():
 @token_required
 def create_mechanic(user_id, role):
 
-    print("Loaded schema fields:", mechanic_schema.fields.keys())
+    print("ROLE RECEIVED IN ROUTE:", role)
 
     if role != "admin":
         return jsonify({"message": "Unauthorized"}), 403
@@ -66,7 +66,10 @@ def create_mechanic(user_id, role):
     # -----------------------------
     # HASH PASSWORD BEFORE SAVING
     # -----------------------------
-    mechanic_data.password = generate_password_hash(mechanic_data.password)
+    mechanic_data.password = generate_password_hash(
+    mechanic_data.password,
+    method="pbkdf2:sha256"
+    )
 
     # -----------------------------
     # ASSIGN MECHANIC ROLE HERE
@@ -121,8 +124,39 @@ def get_mechanic_service_tickets(user_id, role, mechanic_id):
         return jsonify({"message": "Mechanic not found"}), 404
 
     return service_tickets_schema.jsonify(mechanic.service_tickets), 200
+# -----------------------------
+# GET LIST OF MOST POPULAR MECHANIC
+# -----------------------------
+@mechanics_bp.route('/popular', methods=['GET'])
+@token_required
+def popular_mechanics(user_id, role):
 
+    # Only admin should see this
+    if role != "admin":
+        return jsonify({"message": "Unauthorized"}), 403
 
+    results = (
+        db.session.query(
+            Mechanic,
+            func.count(mechanic_tickets.c.service_ticket_id).label("ticket_count")
+        )
+        .outerjoin(mechanic_tickets, Mechanic.id == mechanic_tickets.c.mechanic_id)
+        .group_by(Mechanic.id)
+        .order_by(func.count(mechanic_tickets.c.service_ticket_id).desc())
+        .all()
+    )
+
+    response = [
+        {
+            "id": mechanic.id,
+            "name": mechanic.name,
+            "email": mechanic.email,
+            "ticket_count": ticket_count
+        }
+        for mechanic, ticket_count in results
+    ]
+
+    return jsonify(response), 200
 # -----------------------------
 # UPDATE MECHANIC
 # -----------------------------

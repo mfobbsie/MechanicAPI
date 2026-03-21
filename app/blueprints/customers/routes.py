@@ -60,7 +60,10 @@ def create_customer():
     # -----------------------------
     # HASH PASSWORD BEFORE SAVING
     # -----------------------------
-    customer_data.password = generate_password_hash(customer_data.password)
+    customer_data.password = generate_password_hash(
+    customer_data.password,
+    method="pbkdf2:sha256"
+    )
 
     # Check duplicate email
     existing = db.session.execute(
@@ -145,9 +148,9 @@ def update_customer(user_id, role):
 
     for key, value in request.json.items():
         if key == "password":
-            # Password hashing handled in schema or here if needed
-            continue
-        setattr(customer, key, value)
+            customer.password = generate_password_hash(value, method="pbkdf2:sha256")
+        else:
+            setattr(customer, key, value)
 
     db.session.commit()
     return customer_schema.jsonify(customer), 200
