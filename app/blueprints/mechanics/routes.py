@@ -1,5 +1,6 @@
 # app/blueprints/mechanics/routes.py
 
+from app import cache
 from flask import request, jsonify
 from marshmallow import ValidationError
 from app.models import db, Mechanic, Service_Tickets, mechanic_tickets
@@ -93,6 +94,7 @@ def create_mechanic(user_id, role):
 # GET ALL MECHANICS
 # -----------------------------
 @mechanics_bp.route('/', methods=['GET'])
+@cache.cached(timeout=60, query_string=True, unless=lambda: "Authorization" in request.headers)
 def get_mechanics():
     # Read pagination params
     page = request.args.get("page", 1, type=int)

@@ -93,7 +93,8 @@ def create_customer():
 # GET ALL CUSTOMERS (PAGINATED)
 # -----------------------------
 @customers_bp.route('/', methods=['GET'])
-@cache.cached(timeout=60, query_string=True)
+@cache.cached(timeout=60, query_string=True, unless=lambda: "Authorization" in request.headers)
+
 def get_customers():
     # Read pagination params
     page = request.args.get("page", 1, type=int)
@@ -126,7 +127,7 @@ def get_customers():
 # -----------------------------
 @customers_bp.route('/my-tickets', methods=['GET'])
 @token_required
-@cache.cached(timeout=60, query_string=True)
+@cache.cached(timeout=60, query_string=True, unless=lambda: "Authorization" in request.headers)
 def get_my_tickets(user_id, role):
     if role != "customer":
         return jsonify({"message": "Unauthorized"}), 403

@@ -41,7 +41,7 @@ def create_service_ticket():
 # GET ALL SERVICE TICKETS
 # -----------------------------
 @service_tickets_bp.route('/', methods=['GET'])
-@cache.cached(timeout=60, query_string=True)
+@cache.cached(timeout=60, query_string=True, unless=lambda: "Authorization" in request.headers)
 def get_service_tickets():
     # Read pagination params
     page = request.args.get("page", 1, type=int)
