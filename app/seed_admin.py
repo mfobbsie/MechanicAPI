@@ -3,6 +3,9 @@
 from app.models import db, Customer, Role
 from werkzeug.security import generate_password_hash
 
+from werkzeug.security import generate_password_hash
+from app.models import db, Role, Customer
+
 def seed_admin():
     # Ensure the admin role exists
     admin_role = db.session.execute(
@@ -25,7 +28,7 @@ def seed_admin():
             name="Admin",
             phone="000-000-0000",
             email="admin@example.com",
-            password = generate_password_hash("1234", method="pbkdf2:sha256"),
+            password=generate_password_hash("1234"),  # secure hashing
             role_id=admin_role.id
         )
         db.session.add(admin_user)
@@ -33,3 +36,4 @@ def seed_admin():
         print("Created admin user: admin@example.com / 1234")
     else:
         print("Admin user already exists.")
+

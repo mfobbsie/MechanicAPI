@@ -8,13 +8,15 @@ from .schemas import customer_schema, customers_schema
 from . import customers_bp
 from app.utils.util import encode_token, token_required
 from app.extensions import cache
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # -----------------------------
 # LOGIN
 # -----------------------------
 @customers_bp.route('/login', methods=['POST'])
-def login():
+def login_customer():
+
     data = request.get_json() or {}
 
     email = data.get("email")
@@ -27,17 +29,24 @@ def login():
         db.select(Customer).where(Customer.email == email)
     ).scalar_one_or_none()
 
-    if customer and check_password_hash(customer.password, password):
-        token = encode_token(customer.id, customer.role.role_name)
-        return jsonify({
-            "status": "success",
-            "message": "Login successful",
-            "auth_token": token
-        }), 200
+    if not customer:
+        return jsonify({"message": "Invalid email or password"}), 401
 
-    return jsonify({"message": "Invalid email or password"}), 401
+    # Check hashed password
+    if not check_password_hash(customer.password, password):
+        return jsonify({"message": "Invalid email or password"}), 401
 
+    # IMPORTANT:
+    # Allow BOTH admin and customer to log in
+    role_name = customer.role.role_name
 
+    token = encode_token(customer.id, role_name)
+
+    return jsonify({
+        "status": "success",
+        "message": "Login successful",
+        "auth_token": token
+    }), 200
 # -----------------------------
 # CREATE CUSTOMER
 # -----------------------------
@@ -47,6 +56,11 @@ def create_customer():
         customer_data = customer_schema.load(request.json)
     except ValidationError as err:
         return jsonify(err.messages), 400
+
+    # -----------------------------
+    # HASH PASSWORD BEFORE SAVING
+    # -----------------------------
+    customer_data.password = generate_password_hash(customer_data.password)
 
     # Check duplicate email
     existing = db.session.execute(

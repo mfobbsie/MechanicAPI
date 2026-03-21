@@ -8,7 +8,7 @@ from .schemas import mechanic_schema, mechanics_schema
 from app.blueprints.service_tickets.schemas import service_tickets_schema
 from . import mechanics_bp
 from app.utils.util import encode_token, token_required
-
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # -----------------------------
 # LOGIN
@@ -41,10 +41,6 @@ def login():
 # -----------------------------
 # CREATE MECHANIC (ADMIN ONLY)
 # -----------------------------
-# CREATE MECHANIC (ADMIN ONLY)
-# -----------------------------
-from werkzeug.security import generate_password_hash
-
 @mechanics_bp.route('/', methods=['POST'])
 @token_required
 def create_mechanic(user_id, role):
@@ -147,8 +143,9 @@ def update_mechanic(user_id, role):
 
     for key, value in request.json.items():
         if key == "password":
-            continue  # password hashing handled separately if needed
-        setattr(mechanic, key, value)
+            mechanic.password = generate_password_hash(value)
+        else:
+            setattr(mechanic, key, value)
 
     db.session.commit()
     return mechanic_schema.jsonify(mechanic), 200
