@@ -41,10 +41,31 @@ def create_service_ticket():
 # GET ALL SERVICE TICKETS
 # -----------------------------
 @service_tickets_bp.route('/', methods=['GET'])
-@cache.cached(timeout=60)
+@cache.cached(timeout=60, query_string=True)
 def get_service_tickets():
-    tickets = db.session.execute(db.select(Service_Tickets)).scalars().all()
-    return service_tickets_schema.jsonify(tickets), 200
+    # Read pagination params
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+
+    # Query with pagination
+    pagination = db.paginate(
+        db.select(Service_Tickets),
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+    tickets = pagination.items
+    return jsonify({
+        "service_tickets": service_tickets_schema.dump(tickets),
+        "total": pagination.total,
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "pages": pagination.pages,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev,
+        "next_page": pagination.next_num if pagination.has_next else None,
+        "prev_page": pagination.prev_num if pagination.has_prev else None
+    }), 200
 
 
 # -----------------------------

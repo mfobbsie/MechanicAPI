@@ -90,21 +90,43 @@ def create_customer():
     return customer_schema.jsonify(customer_data), 201
 
 # -----------------------------
-# GET ALL CUSTOMERS
+# GET ALL CUSTOMERS (PAGINATED)
 # -----------------------------
 @customers_bp.route('/', methods=['GET'])
-@cache.cached(timeout=60)
+@cache.cached(timeout=60, query_string=True)
 def get_customers():
-    customers = db.session.execute(db.select(Customer)).scalars().all()
-    return customers_schema.jsonify(customers), 200
+    # Read pagination params
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
 
+    # Query with pagination
+    pagination = db.paginate(
+        db.select(Customer),
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+
+    customers = pagination.items
+
+    return jsonify({
+        "customers": customers_schema.dump(customers),
+        "total": pagination.total,
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "pages": pagination.pages,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev,
+        "next_page": pagination.next_num if pagination.has_next else None,
+        "prev_page": pagination.prev_num if pagination.has_prev else None
+    }), 200
 
 # -----------------------------
 # GET MY TICKETS (AUTH REQUIRED)
 # -----------------------------
 @customers_bp.route('/my-tickets', methods=['GET'])
 @token_required
-@cache.cached(timeout=60)
+@cache.cached(timeout=60, query_string=True)
 def get_my_tickets(user_id, role):
     if role != "customer":
         return jsonify({"message": "Unauthorized"}), 403

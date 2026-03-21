@@ -94,8 +94,30 @@ def create_mechanic(user_id, role):
 # -----------------------------
 @mechanics_bp.route('/', methods=['GET'])
 def get_mechanics():
-    mechanics = db.session.execute(db.select(Mechanic)).scalars().all()
-    return mechanics_schema.jsonify(mechanics), 200
+    # Read pagination params
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 10, type=int)
+
+    # Query with pagination
+    pagination = db.paginate(
+        db.select(Mechanic),
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+
+    mechanics = pagination.items
+    return jsonify({
+        "mechanics": mechanics_schema.dump(mechanics),
+        "total": pagination.total,
+        "page": pagination.page,
+        "per_page": pagination.per_page,
+        "pages": pagination.pages,
+        "has_next": pagination.has_next,
+        "has_prev": pagination.has_prev,
+        "next_page": pagination.next_num if pagination.has_next else None,
+        "prev_page": pagination.prev_num if pagination.has_prev else None
+    }), 200
 
 
 # -----------------------------

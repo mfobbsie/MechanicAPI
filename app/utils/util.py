@@ -12,6 +12,7 @@ SECRET_KEY = "a super secret, secret key"
 # ENCODE TOKEN
 # -----------------------------
 def encode_token(user_id, role):
+    
     payload = {
         "exp": datetime.now(timezone.utc) + timedelta(hours=1),
         "iat": datetime.now(timezone.utc),
