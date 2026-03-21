@@ -21,6 +21,16 @@ def create_app():
     cache.init_app(app)
     migrate.init_app(app, db)
 
+    # Import models BEFORE create_all
+    from app.models import (
+        Customer, Mechanic, Service_Tickets,
+        Inventory, Inventory_Service_Ticket
+    )
+
+    # Create tables
+    with app.app_context():
+        db.create_all()
+
     # Register CLI commands
     register_cli(app)
 
