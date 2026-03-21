@@ -1,13 +1,16 @@
-from app.models import db
+# app/blueprints/service_tickets/schemas.py
+
 from app.extensions import ma
-from app.models import Service_Tickets
+from app.models import Service_Tickets, db
+
 
 class ServiceTicketSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
         model = Service_Tickets
         load_instance = True
+        sqla_session = db.session
         include_fk = True
-        sqla_session = db.session   # optional but recommended
 
-service_ticket_schema = ServiceTicketSchema(session=db.session)
-service_tickets_schema = ServiceTicketSchema(many=True, session=db.session)
+
+service_ticket_schema = ServiceTicketSchema()
+service_tickets_schema = ServiceTicketSchema(many=True)

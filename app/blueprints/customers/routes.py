@@ -2,37 +2,45 @@
 
 from flask import request, jsonify
 from marshmallow import ValidationError
+from werkzeug.security import check_password_hash
 from app.models import db, Customer, Service_Tickets
 from .schemas import customer_schema, customers_schema
 from . import customers_bp
 from app.utils.util import encode_token, token_required
-from app.extensions import limiter, cache
+from app.extensions import cache
 
+
+# -----------------------------
 # LOGIN
+# -----------------------------
 @customers_bp.route('/login', methods=['POST'])
 def login():
-    try:
-        credentials = request.json
-        username = credentials['email']
-        password = credentials['password']
-    except KeyError:
-        return jsonify({'messages': "Invalid payload, expecting username and password"}), 400
-    
-    query = db.select(Customer).where(Customer.email == username)
-    customer = db.session.execute(query).scalar_one_or_none()
-    
-    if customer and customer.password == password:
-        auth_token = encode_token(customer.id, customer.role.role_name)
+    data = request.get_json() or {}
+
+    email = data.get("email")
+    password = data.get("password")
+
+    if not email or not password:
+        return jsonify({"message": "Email and password are required"}), 400
+
+    customer = db.session.execute(
+        db.select(Customer).where(Customer.email == email)
+    ).scalar_one_or_none()
+
+    if customer and check_password_hash(customer.password, password):
+        token = encode_token(customer.id, customer.role.role_name)
         return jsonify({
-            'status': 'success',
-            'message': 'Login successful',
-            'auth_token': auth_token
+            "status": "success",
+            "message": "Login successful",
+            "auth_token": token
         }), 200
-    
-    return jsonify({'message': 'Invalid email or password'}), 401
+
+    return jsonify({"message": "Invalid email or password"}), 401
 
 
+# -----------------------------
 # CREATE CUSTOMER
+# -----------------------------
 @customers_bp.route('/', methods=['POST'])
 def create_customer():
     try:
@@ -40,27 +48,46 @@ def create_customer():
     except ValidationError as err:
         return jsonify(err.messages), 400
 
-    query = db.select(Customer).where(Customer.email == customer_data.email)
-    if db.session.execute(query).scalars().first():
+    # Check duplicate email
+    existing = db.session.execute(
+        db.select(Customer).where(Customer.email == customer_data.email)
+    ).scalar_one_or_none()
+
+    if existing:
         return jsonify({"message": "Email already associated with an account"}), 400
+
+    # Assign default customer role
+    from app.models import Role
+    customer_role = db.session.execute(
+        db.select(Role).where(Role.role_name == "customer")
+    ).scalar_one_or_none()
+
+    if not customer_role:
+        return jsonify({"message": "Customer role not found"}), 500
+
+    customer_data.role_id = customer_role.id
 
     db.session.add(customer_data)
     db.session.commit()
+
     return customer_schema.jsonify(customer_data), 201
 
-
+# -----------------------------
 # GET ALL CUSTOMERS
+# -----------------------------
 @customers_bp.route('/', methods=['GET'])
-@cache.cached(timeout=60)  # Cache this endpoint for 60 seconds
+@cache.cached(timeout=60)
 def get_customers():
     customers = db.session.execute(db.select(Customer)).scalars().all()
     return customers_schema.jsonify(customers), 200
 
 
+# -----------------------------
 # GET MY TICKETS (AUTH REQUIRED)
+# -----------------------------
 @customers_bp.route('/my-tickets', methods=['GET'])
 @token_required
-@cache.cached(timeout=60)  
+@cache.cached(timeout=60)
 def get_my_tickets(user_id, role):
     if role != "customer":
         return jsonify({"message": "Unauthorized"}), 403
@@ -84,7 +111,9 @@ def get_my_tickets(user_id, role):
     }), 200
 
 
+# -----------------------------
 # UPDATE CUSTOMER
+# -----------------------------
 @customers_bp.route('/', methods=['PUT'])
 @token_required
 def update_customer(user_id, role):
@@ -101,13 +130,18 @@ def update_customer(user_id, role):
         return jsonify(err.messages), 400
 
     for key, value in request.json.items():
+        if key == "password":
+            # Password hashing handled in schema or here if needed
+            continue
         setattr(customer, key, value)
 
     db.session.commit()
     return customer_schema.jsonify(customer), 200
 
 
+# -----------------------------
 # DELETE CUSTOMER
+# -----------------------------
 @customers_bp.route('/', methods=['DELETE'])
 @token_required
 def delete_customer(user_id, role):
@@ -123,4 +157,5 @@ def delete_customer(user_id, role):
 
     db.session.delete(customer)
     db.session.commit()
+
     return jsonify({"message": "Customer deleted successfully"}), 200
