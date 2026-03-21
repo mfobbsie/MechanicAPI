@@ -1,11 +1,10 @@
-from linecache import cache
 
 from flask import request, jsonify
 from marshmallow import ValidationError
 from app.models import db, Mechanic, Service_Tickets
 from .schemas import service_ticket_schema, service_tickets_schema
 from . import service_tickets_bp
-from app.extensions import limiter
+from app.extensions import limiter, cache
 
 # Create a new service ticket
 @service_tickets_bp.route('/', methods=['POST'])

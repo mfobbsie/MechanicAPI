@@ -15,6 +15,8 @@ class Customer(Base):
     name: Mapped[str] = mapped_column(db.String(255), nullable=False)
     phone: Mapped[str] = mapped_column(db.String(360), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(db.String(255), nullable=False, unique=True)
+    role_id: Mapped[int] = mapped_column(db.ForeignKey("roles.id"))
+    role: Mapped["Role"] = db.relationship("Role", back_populates="customers")
 
     service_tickets: Mapped[list["Service_Tickets"]] = db.relationship(
         "Service_Tickets",
@@ -60,9 +62,28 @@ class Mechanic(Base):
     phone: Mapped[str] = mapped_column(db.String(360), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(db.String(255), nullable=False, unique=True)
     salary: Mapped[float] = mapped_column(db.Float, nullable=False)
+    role_id: Mapped[int] = mapped_column(db.ForeignKey("roles.id"))
+    role: Mapped["Role"] = db.relationship("Role", back_populates="mechanics")
 
     service_tickets: Mapped[list["Service_Tickets"]] = db.relationship(
         "Service_Tickets",
         secondary=mechanic_tickets,
         back_populates="mechanics"
     )
+    
+class Role(Base):
+    __tablename__ = "roles"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    role_name: Mapped[str] = mapped_column(db.String(50), unique=True, nullable=False)
+
+    customers: Mapped[list["Customer"]] = db.relationship("Customer", back_populates="role")
+    mechanics: Mapped[list["Mechanic"]] = db.relationship("Mechanic", back_populates="role")
+    
+    __all__ = [
+    "db",
+    "Customer",
+    "Mechanic",
+    "Service_Tickets",
+    "Role"
+]

@@ -1,16 +1,14 @@
+# app/blueprints/mechanics/routes.py
+
 from flask import request, jsonify
 from marshmallow import ValidationError
 from app.models import db, Mechanic, Service_Tickets
 from app.utils.util import encode_token, token_required
-
-# mechanic schemas
 from .schemas import mechanic_schema, mechanics_schema
-
-# service ticket schemas
 from app.blueprints.service_tickets.schemas import service_tickets_schema
-
 from . import mechanics_bp
 
+# LOGIN
 @mechanics_bp.route('/login', methods=['POST'])
 def login():
     try:
@@ -25,29 +23,29 @@ def login():
     
     if mechanic and mechanic.password == password:
         auth_token = encode_token(mechanic.id, mechanic.role.role_name)
-        
-        response = {
+        return jsonify({
             'status': 'success',
             'message': 'Login successful',
             'auth_token': auth_token
-        }
-        return jsonify(response), 200
-    else:
-        return jsonify({'message': 'Invalid email or password'}), 401
+        }), 200
+    
+    return jsonify({'message': 'Invalid email or password'}), 401
 
 
-# Create a new mechanic
+# CREATE MECHANIC (ADMIN ONLY)
 @mechanics_bp.route('/', methods=['POST'])
-def create_mechanic():
+@token_required
+def create_mechanic(user_id, role):
+    if role != "admin":
+        return jsonify({"message": "Unauthorized"}), 403
+
     try:
         mechanic_data = mechanic_schema.load(request.json)
     except ValidationError as err:
         return jsonify(err.messages), 400
 
     query = db.select(Mechanic).where(Mechanic.email == mechanic_data.email)
-    existing_mechanic = db.session.execute(query).scalars().first()
-
-    if existing_mechanic:
+    if db.session.execute(query).scalars().first():
         return jsonify({"message": "Email already associated with an account"}), 400
 
     db.session.add(mechanic_data)
@@ -55,14 +53,14 @@ def create_mechanic():
     return mechanic_schema.jsonify(mechanic_data), 201
 
 
-# Retrieve all mechanics
+# GET ALL MECHANICS
 @mechanics_bp.route('/', methods=['GET'])
 def get_mechanics():
     mechanics = db.session.execute(db.select(Mechanic)).scalars().all()
     return mechanics_schema.jsonify(mechanics), 200
 
 
-# Retrieve a mechanic by ID
+# GET MECHANIC BY ID
 @mechanics_bp.route('/<int:mechanic_id>', methods=['GET'])
 def get_mechanic(mechanic_id):
     mechanic = db.session.get(Mechanic, mechanic_id)
@@ -71,23 +69,28 @@ def get_mechanic(mechanic_id):
     return mechanic_schema.jsonify(mechanic), 200
 
 
-# Retrieve all service tickets assigned to a mechanic
+# GET MECHANIC'S TICKETS
 @mechanics_bp.route('/<int:mechanic_id>/service_tickets', methods=['GET'])
 @token_required
-def get_mechanic_service_tickets(mechanic_id):
+def get_mechanic_service_tickets(user_id, role, mechanic_id):
+    if role != "mechanic":
+        return jsonify({"message": "Unauthorized"}), 403
+
     mechanic = db.session.get(Mechanic, mechanic_id)
     if not mechanic:
         return jsonify({"message": "Mechanic not found"}), 404
 
-    tickets = mechanic.service_tickets
-    return service_tickets_schema.jsonify(tickets), 200
+    return service_tickets_schema.jsonify(mechanic.service_tickets), 200
 
 
-# Update a mechanic
-@mechanics_bp.route('/<int:mechanic_id>', methods=['PUT'])
+# UPDATE MECHANIC
+@mechanics_bp.route('/', methods=['PUT'])
 @token_required
-def update_mechanic(user_id, mechanic_id):
-    mechanic = db.session.get(Mechanic, mechanic_id)
+def update_mechanic(user_id, role):
+    if role != "mechanic":
+        return jsonify({"message": "Unauthorized"}), 403
+
+    mechanic = db.session.get(Mechanic, user_id)
     if not mechanic:
         return jsonify({"message": "Mechanic not found"}), 404
 
@@ -103,11 +106,14 @@ def update_mechanic(user_id, mechanic_id):
     return mechanic_schema.jsonify(mechanic), 200
 
 
-# Delete a mechanic
-@mechanics_bp.route('/<int:mechanic_id>', methods=['DELETE'])
+# DELETE MECHANIC
+@mechanics_bp.route('/', methods=['DELETE'])
 @token_required
-def delete_mechanic(user_id, mechanic_id):
-    mechanic = db.session.get(Mechanic, mechanic_id)
+def delete_mechanic(user_id, role):
+    if role != "admin":
+        return jsonify({"message": "Unauthorized"}), 403
+
+    mechanic = db.session.get(Mechanic, user_id)
     if not mechanic:
         return jsonify({"message": "Mechanic not found"}), 404
 

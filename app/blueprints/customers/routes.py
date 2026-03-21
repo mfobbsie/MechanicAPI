@@ -1,4 +1,4 @@
-from linecache import cache
+# app/blueprints/customers/routes.py
 
 from flask import request, jsonify
 from marshmallow import ValidationError
@@ -6,7 +6,9 @@ from app.models import db, Customer, Service_Tickets
 from .schemas import customer_schema, customers_schema
 from . import customers_bp
 from app.utils.util import encode_token, token_required
+from app.extensions import limiter, cache
 
+# LOGIN
 @customers_bp.route('/login', methods=['POST'])
 def login():
     try:
@@ -21,17 +23,16 @@ def login():
     
     if customer and customer.password == password:
         auth_token = encode_token(customer.id, customer.role.role_name)
-        
-        response = {
+        return jsonify({
             'status': 'success',
             'message': 'Login successful',
             'auth_token': auth_token
-        }
-        return jsonify(response), 200
-    else:
-        return jsonify({'message': 'Invalid email or password'}), 401
+        }), 200
     
-# Create a new customer
+    return jsonify({'message': 'Invalid email or password'}), 401
+
+
+# CREATE CUSTOMER
 @customers_bp.route('/', methods=['POST'])
 def create_customer():
     try:
@@ -40,9 +41,7 @@ def create_customer():
         return jsonify(err.messages), 400
 
     query = db.select(Customer).where(Customer.email == customer_data.email)
-    existing_customer = db.session.execute(query).scalars().first()
-
-    if existing_customer:
+    if db.session.execute(query).scalars().first():
         return jsonify({"message": "Email already associated with an account"}), 400
 
     db.session.add(customer_data)
@@ -50,7 +49,7 @@ def create_customer():
     return customer_schema.jsonify(customer_data), 201
 
 
-# Retrieve all customers
+# GET ALL CUSTOMERS
 @customers_bp.route('/', methods=['GET'])
 @cache.cached(timeout=60)  # Cache this endpoint for 60 seconds
 def get_customers():
@@ -58,11 +57,41 @@ def get_customers():
     return customers_schema.jsonify(customers), 200
 
 
-# Update a customer
-@customers_bp.route('/<int:customer_id>', methods=['PUT'])
+# GET MY TICKETS (AUTH REQUIRED)
+@customers_bp.route('/my-tickets', methods=['GET'])
 @token_required
-def update_customer(user_id, customer_id):
-    customer = db.session.get(Customer, customer_id)
+@cache.cached(timeout=60)  
+def get_my_tickets(user_id, role):
+    if role != "customer":
+        return jsonify({"message": "Unauthorized"}), 403
+
+    tickets = db.session.execute(
+        db.select(Service_Tickets).where(Service_Tickets.customer_id == user_id)
+    ).scalars().all()
+
+    return jsonify({
+        "customer_id": user_id,
+        "tickets": [
+            {
+                "id": t.id,
+                "VIN": t.VIN,
+                "service_date": t.service_date.isoformat(),
+                "description": t.description,
+                "mechanics": [m.name for m in t.mechanics]
+            }
+            for t in tickets
+        ]
+    }), 200
+
+
+# UPDATE CUSTOMER
+@customers_bp.route('/', methods=['PUT'])
+@token_required
+def update_customer(user_id, role):
+    if role != "customer":
+        return jsonify({"message": "Unauthorized"}), 403
+
+    customer = db.session.get(Customer, user_id)
     if not customer:
         return jsonify({"message": "Customer not found"}), 404
 
@@ -78,11 +107,14 @@ def update_customer(user_id, customer_id):
     return customer_schema.jsonify(customer), 200
 
 
-# Delete a customer
-@customers_bp.route('/<int:customer_id>', methods=['DELETE'])
+# DELETE CUSTOMER
+@customers_bp.route('/', methods=['DELETE'])
 @token_required
-def delete_customer(user_id, customer_id):
-    customer = db.session.get(Customer, customer_id)
+def delete_customer(user_id, role):
+    if role != "customer":
+        return jsonify({"message": "Unauthorized"}), 403
+
+    customer = db.session.get(Customer, user_id)
     if not customer:
         return jsonify({"message": "Customer not found"}), 404
 
