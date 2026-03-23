@@ -59,7 +59,7 @@ def token_required(f):
 
         try:
             data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            user_id = data.get("sub")
+            user_id = int(data.get("sub"))
             role = data.get("role")
 
             if not user_id or not role:

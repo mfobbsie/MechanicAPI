@@ -38,9 +38,10 @@ class DevelopmentConfig(Config):
 
 
 class TestingConfig(Config):
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///testing.db'
     TESTING = True
     DEBUG = False
-    SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"  # fast, isolated tests
+    CACHE_TYPE = 'SimpleCache'
 
 
 class ProductionConfig(Config):

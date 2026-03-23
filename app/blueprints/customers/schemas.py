@@ -9,6 +9,8 @@ class CustomerSchema(ma.SQLAlchemyAutoSchema):
         sqla_session = db.session
         load_only = ("password",)  # allow password input, hide on output
 
+    name = fields.String(required=True)
+    email = fields.Email(required=True)
     password = fields.String(load_only=True)
     phone = fields.String(required=True)
 

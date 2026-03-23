@@ -1,7 +1,5 @@
 # app/__init__.py
 
-# app/__init__.py
-
 from flask import Flask
 from app.models import db
 from app.extensions import ma, limiter, cache, migrate
@@ -12,8 +10,7 @@ from app.blueprints.inventory import inventory_bp
 from app.cli import register_cli
 from flask_swagger_ui import get_swaggerui_blueprint
 
-
-def create_app():
+def create_app(config_name="Config"):
     # Swagger UI
     SWAGGER_URL = '/api/docs'
     API_URL = '/static/swagger.yaml'
@@ -24,7 +21,9 @@ def create_app():
     )
 
     app = Flask(__name__)
-    app.config.from_object("app.config.Config")
+
+    # ⭐ Load config dynamically
+    app.config.from_object(f"app.config.{config_name}")
 
     # Initialize extensions
     db.init_app(app)
@@ -33,8 +32,7 @@ def create_app():
     cache.init_app(app)
     migrate.init_app(app, db)
 
-    # ⭐ Import models AFTER db.init_app(app)
-    # This ensures SQLAlchemy binds .query to each model
+    # Import models AFTER db.init_app
     from app.models import (
         Customer,
         Mechanic,
@@ -48,7 +46,7 @@ def create_app():
     with app.app_context():
         db.create_all()
 
-    # Register CLI commands (seed-admin, etc.)
+    # Register CLI commands
     register_cli(app)
 
     # Register blueprints

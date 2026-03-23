@@ -42,7 +42,7 @@ def login():
 # -----------------------------
 # CREATE MECHANIC (ADMIN ONLY)
 # -----------------------------
-@mechanics_bp.route('/', methods=['POST'])
+@mechanics_bp.route('', methods=['POST'])
 @token_required
 def create_mechanic(user_id, role):
 
@@ -93,7 +93,7 @@ def create_mechanic(user_id, role):
 # -----------------------------
 # GET ALL MECHANICS
 # -----------------------------
-@mechanics_bp.route('/', methods=['GET'])
+@mechanics_bp.route('', methods=['GET'])
 @cache.cached(timeout=60, query_string=True, unless=lambda: "Authorization" in request.headers)
 def get_mechanics():
     # Read pagination params
@@ -184,7 +184,7 @@ def popular_mechanics(user_id, role):
 # -----------------------------
 # UPDATE MECHANIC
 # -----------------------------
-@mechanics_bp.route('/', methods=['PUT'])
+@mechanics_bp.route('', methods=['PUT'])
 @token_required
 def update_mechanic(user_id, role):
 

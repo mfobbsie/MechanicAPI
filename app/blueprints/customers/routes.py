@@ -50,7 +50,7 @@ def login_customer():
 # -----------------------------
 # CREATE CUSTOMER
 # -----------------------------
-@customers_bp.route('/', methods=['POST'])
+@customers_bp.route('', methods=['POST'])
 def create_customer():
     try:
         customer_data = customer_schema.load(request.json)
@@ -92,7 +92,7 @@ def create_customer():
 # -----------------------------
 # GET ALL CUSTOMERS (PAGINATED)
 # -----------------------------
-@customers_bp.route('/', methods=['GET'])
+@customers_bp.route('', methods=['GET'])
 @cache.cached(timeout=60, query_string=True, unless=lambda: "Authorization" in request.headers)
 
 def get_customers():
@@ -149,7 +149,9 @@ def get_my_tickets(user_id, role):
             for t in tickets
         ]
     }), 200
-
+# -----------------------------
+# UPDATE CUSTOMER (AUTH REQUIRED)
+# -----------------------------
 
 @customers_bp.route('/<int:customer_id>', methods=['PUT'])
 @token_required
@@ -199,7 +201,7 @@ def update_customer(user_id, role, customer_id):
     return jsonify({"message": "Unauthorized"}), 403
 
 # -----------------------------
-# DELETE CUSTOMER
+# DELETE CUSTOMER (AUTH REQUIRED)
 # -----------------------------
 @customers_bp.route('/<int:customer_id>', methods=['DELETE'])
 @token_required
