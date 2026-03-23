@@ -25,7 +25,7 @@ def register_cli(app):
                     name="Admin",
                     phone="000-000-0000",
                     email="admin@example.com",
-                    password=generate_password_hash("1234"),
+                    password=generate_password_hash("1234", method="pbkdf2:sha256"),
                     role_id=admin_role.id,
                 )
                 db.session.add(admin_user)

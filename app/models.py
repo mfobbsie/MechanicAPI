@@ -2,27 +2,19 @@
 
 from datetime import date
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Integer, Float, Text, Date, ForeignKey, Table, UniqueConstraint
 
-
-# -----------------------------
-# Base class for SQLAlchemy 2.0
-# -----------------------------
-class Base(DeclarativeBase):
-    pass
+# Initialize SQLAlchemy using Flask-SQLAlchemy's default Model class
+db = SQLAlchemy()
 
 
-db = SQLAlchemy(model_class=Base)
-
-
-# -----------------------------
 # -----------------------------
 # Many-to-many association table
 # -----------------------------
 mechanic_tickets = Table(
     "mechanic_tickets",
-    db.metadata,
+    db.Model.metadata,
     db.Column("mechanic_id", db.Integer, db.ForeignKey("mechanics.id"), primary_key=True),
     db.Column("service_ticket_id", db.Integer, db.ForeignKey("service_tickets.id"), primary_key=True),
 )
@@ -31,7 +23,7 @@ mechanic_tickets = Table(
 # -----------------------------
 # ROLE MODEL
 # -----------------------------
-class Role(Base):
+class Role(db.Model):
     __tablename__ = "roles"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -44,7 +36,7 @@ class Role(Base):
 # -----------------------------
 # CUSTOMER MODEL
 # -----------------------------
-class Customer(Base):
+class Customer(db.Model):
     __tablename__ = "customers"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -66,7 +58,7 @@ class Customer(Base):
 # -----------------------------
 # SERVICE TICKETS MODEL
 # -----------------------------
-class Service_Tickets(Base):
+class Service_Tickets(db.Model):
     __tablename__ = "service_tickets"
 
     __table_args__ = (
@@ -93,10 +85,11 @@ class Service_Tickets(Base):
         cascade="all, delete-orphan"
     )
 
+
 # -----------------------------
 # MECHANIC MODEL
 # -----------------------------
-class Mechanic(Base):
+class Mechanic(db.Model):
     __tablename__ = "mechanics"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -113,13 +106,13 @@ class Mechanic(Base):
         "Service_Tickets",
         secondary=mechanic_tickets,
         back_populates="mechanics"
-    
-)
+    )
+
 
 # -----------------------------
 # INVENTORY MODEL
 # -----------------------------
-class Inventory(Base):
+class Inventory(db.Model):
     __tablename__ = "inventory"
 
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -133,10 +126,11 @@ class Inventory(Base):
         cascade="all, delete-orphan"
     )
 
+
 # -----------------------------
 # INVENTORY_SERVICE_TICKET MODEL
 # -----------------------------
-class Inventory_Service_Ticket(Base):
+class Inventory_Service_Ticket(db.Model):
     __tablename__ = "inventory_service_ticket"
 
     inventory_id: Mapped[int] = mapped_column(ForeignKey("inventory.id"), primary_key=True)
@@ -147,11 +141,12 @@ class Inventory_Service_Ticket(Base):
     service_tickets: Mapped["Service_Tickets"] = relationship("Service_Tickets", back_populates="inventory_service_tickets")
 
 
-
 __all__ = [
     "db",
     "Customer",
     "Mechanic",
     "Service_Tickets",
     "Inventory",
+    "Inventory_Service_Ticket",
+    "Role",
 ]

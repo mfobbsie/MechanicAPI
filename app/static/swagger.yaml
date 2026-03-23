@@ -1,0 +1,298 @@
+#app/static/swagger.yaml
+
+swagger: '2.0'
+info:
+  title: "Mechanics API"
+  description: "This is an API for managing mechanics and service tickets"
+  version: "1.0.0"
+host: "127.0.0.1:5000"
+schemes:
+  - "http"
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+
+securityDefinitions:
+  bearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
+
+paths:
+
+  /customers:
+    post:
+      tags:
+        - Customers
+      summary: "Endpoint to create/register a new customer."
+      description: "Endpoint to create a new customer in our system. Emails must be unique."
+      parameters:
+        - in: body
+          name: body
+          description: "Information required to create a new Customer."
+          required: true
+          schema:
+            $ref: "#/definitions/CreateCustomerPayload"
+      responses:
+        201:
+          description: "Successful Customer Creation"
+          schema:
+            $ref: "#/definitions/CreateCustomerResponse"
+          examples:
+            application/json:
+              id: 1
+              name: John Doe
+              DOB: "1900-01-01"
+              email: johnd@email.com
+
+    get:
+      tags:
+        - Customers
+      summary: "Endpoint to get all customers"
+      description: "Retrieve a list of all customers in the system."
+      responses:
+        200:
+          description: "A list of customers"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/Customer"
+
+  /customers/{customer_id}:
+    put:
+      tags:
+        - Customers
+      summary: "Update customer information"
+      description: "Customers can update their own account. Admins may update any customer."
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: customer_id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          description: "Fields to update for this customer"
+          required: true
+          schema:
+            $ref: "#/definitions/Customer"
+      responses:
+        200:
+          description: "Customer updated successfully"
+          schema:
+            $ref: "#/definitions/Customer"
+        400:
+          description: "Invalid input"
+        403:
+          description: "Unauthorized"
+        404:
+          description: "Customer not found"
+
+    /customers/{customer_id}:
+    delete:
+      tags:
+        - Customers
+      summary: "Delete a customer"
+      description: "Customers may delete their own account. Admins may delete any customer."
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: customer_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Customer deleted successfully"
+          schema:
+            $ref: "#/definitions/DeleteCustomerResponse"
+          examples:
+            application/json:
+              message: "Customer 12 deleted successfully"
+        400:
+          description: "Cannot delete customer with existing service tickets"
+        403:
+          description: "Unauthorized"
+        404:
+          description: "Customer not found"
+
+  /customers/login:
+    post:
+      tags:
+        - Customers
+      summary: "Login endpoint (generates token)"
+      description: "Validates customer credentials and returns a token."
+      parameters:
+        - in: body
+          name: body
+          description: "Login Credentials"
+          required: true
+          schema:
+            $ref: "#/definitions/LoginCredentials"
+      responses:
+        200:
+          description: "Login successful"
+          schema:
+            $ref: "#/definitions/LoginResponse"
+
+    
+  /service_tickets:
+    get:
+      summary: "Get all service tickets"
+      responses:
+        200:
+          description: "A list of service tickets"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Service_Ticket"
+    post:
+      summary: "Create a new service ticket"
+      parameters:
+        - in: "body"
+          name: "service_ticket"
+          description: "Service ticket object that needs to be added"
+          required: true
+          schema:
+            $ref: "#/definitions/Service_Ticket"
+      responses:
+        201:
+          description: "Service ticket created successfully"
+        400:
+          description: "Invalid input"
+  /mechanics:
+    get:
+      summary: "Get all mechanics"
+      responses:
+        200:
+          description: "A list of mechanics"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/Mechanic"
+    post:
+      summary: "Create a new mechanic"
+      parameters:
+        - in: "body"
+          name: "mechanic"
+          description: "Mechanic object that needs to be added"
+          required: true
+          schema:
+            $ref: "#/definitions/Mechanic"
+      responses:
+        201:
+          description: "Mechanic created successfully"
+        400:
+          description: "Invalid input"  
+
+definitions:
+
+  LoginCredentials:
+    type: object
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+      - email
+      - password
+
+  LoginResponse:
+    type: object
+    properties:
+      auth_token:
+        type: string
+      message:
+        type: string
+      status:
+        type: string
+    required:
+      - auth_token
+      - message
+      - status
+
+  Customer:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      email:
+        type: string
+      DOB:
+        type: string
+        format: date
+      phone:
+        type: string
+    required:
+      - id
+      - name
+      - email
+
+  CreateCustomerPayload:
+    type: object
+    properties:
+      name:
+        type: string
+      email:
+        type: string
+      DOB:
+        type: string
+        format: date
+      password:
+        type: string
+    required:
+      - name
+      - email
+      - DOB
+      - password
+
+  CreateCustomerResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      email:
+        type: string
+      DOB:
+        type: string
+        format: date
+    required:
+      - id
+      - name
+      - email
+
+  DeleteCustomerResponse:
+    type: object
+    properties:
+      message:
+        type: string
+    required:
+      - message
+
+  Service_Ticket:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      description:
+        type: "string"
+      customer_id:
+        type: "integer"
+      mechanic_id:
+        type: "integer"
+  Mechanic:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+      name:
+        type: "string"
+      specialty:
+        type: "string"

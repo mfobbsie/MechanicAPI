@@ -154,13 +154,14 @@ def get_my_tickets(user_id, role):
 # -----------------------------
 # UPDATE CUSTOMER
 # -----------------------------
-@customers_bp.route('/', methods=['PUT'])
+@customers_bp.route('/<int:customer_id>', methods=['PUT'])
 @token_required
-def update_customer(user_id, role):
-    if role != "customer":
+def update_customer(user_id, role, customer_id):
+    # Customers can only update their own account
+    if role != "customer" or user_id != customer_id:
         return jsonify({"message": "Unauthorized"}), 403
 
-    customer = db.session.get(Customer, user_id)
+    customer = db.session.get(Customer, customer_id)
     if not customer:
         return jsonify({"message": "Customer not found"}), 404
 
@@ -178,17 +179,17 @@ def update_customer(user_id, role):
     db.session.commit()
     return customer_schema.jsonify(customer), 200
 
-
 # -----------------------------
 # DELETE CUSTOMER
 # -----------------------------
-@customers_bp.route('/', methods=['DELETE'])
+@customers_bp.route('/<int:customer_id>', methods=['DELETE'])
 @token_required
-def delete_customer(user_id, role):
-    if role != "customer":
+def delete_customer(user_id, role, customer_id):
+    # Customers can only delete their own account
+    if role != "customer" or user_id != customer_id:
         return jsonify({"message": "Unauthorized"}), 403
 
-    customer = db.session.get(Customer, user_id)
+    customer = db.session.get(Customer, customer_id)
     if not customer:
         return jsonify({"message": "Customer not found"}), 404
 
@@ -198,4 +199,4 @@ def delete_customer(user_id, role):
     db.session.delete(customer)
     db.session.commit()
 
-    return jsonify({"message": "Customer deleted successfully"}), 200
+    return jsonify({"message": f"Customer {customer_id} deleted successfully"}), 200
