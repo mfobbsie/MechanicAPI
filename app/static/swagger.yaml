@@ -89,7 +89,7 @@ paths:
           description: "Unauthorized"
         404:
           description: "Customer not found"
-          
+
     delete:
       tags:
         - Customers
@@ -487,7 +487,147 @@ paths:
           description: "Mechanic not assigned to this ticket"
         404:
           description: "Ticket or mechanic not found"
+  /service_tickets/{ticket_id}/add_part:
+    post:
+      tags:
+        - Service Tickets
+      summary: "Add an inventory part to a service ticket"
+      parameters:
+        - in: path
+          name: ticket_id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/AddPartToTicketPayload"
+          examples:
+            application/json:
+              inventory_id: 3
+              quantity_used: 2
+      responses:
+        201:
+          description: "Part added to ticket"
+          schema:
+            $ref: "#/definitions/AddPartToTicketResponse"
+        400:
+          description: "Not enough stock"
+        404:
+          description: "Ticket or inventory item not found"
 
+  /inventory:
+    post:
+      tags:
+        - Inventory
+      summary: "Create a new inventory item"
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateInventoryPayload"
+          examples:
+            application/json:
+              item_name: "Brake Pads"
+              quantity: 50
+              price: 29.99
+      responses:
+        201:
+          description: "Inventory item created"
+          schema:
+            $ref: "#/definitions/Inventory"
+        400:
+          description: "Invalid input"
+
+    get:
+      tags:
+        - Inventory
+      summary: "Get all inventory items (paginated)"
+      parameters:
+        - in: query
+          name: page
+          type: integer
+        - in: query
+          name: per_page
+          type: integer
+      responses:
+        200:
+          description: "List of inventory items"
+          schema:
+            type: object
+            properties:
+              inventory:
+                type: array
+                items:
+                  $ref: "#/definitions/Inventory"
+              total: { type: integer }
+              page: { type: integer }
+              per_page: { type: integer }
+              pages: { type: integer }
+
+  /inventory/{item_id}:
+    get:
+      tags:
+        - Inventory
+      summary: "Get a single inventory item"
+      parameters:
+        - in: path
+          name: item_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Inventory item found"
+          schema:
+            $ref: "#/definitions/Inventory"
+        404:
+          description: "Item not found"
+    put:
+      tags:
+        - Inventory
+      summary: "Update an inventory item"
+      parameters:
+        - in: path
+          name: item_id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateInventoryPayload"
+          examples:
+            application/json:
+              item_name: "Updated Brake Pads"
+              quantity: 40
+              price: 27.99
+      responses:
+        200:
+          description: "Inventory item updated"
+          schema:
+            $ref: "#/definitions/Inventory"
+        404:
+          description: "Item not found"
+    delete:
+      tags:
+        - Inventory
+      summary: "Delete an inventory item"
+      parameters:
+        - in: path
+          name: item_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Item deleted"
+          schema:
+            $ref: "#/definitions/DeleteInventoryResponse"
+          examples:
+            application/json:
+              message: "Item deleted"
+        404:
+          description: "Item not found"
 
 definitions:
 
@@ -736,6 +876,73 @@ definitions:
         type: string
     required:
       - message
+
+  Inventory:
+    type: object
+    properties:
+      id:
+        type: integer
+      item_name:
+        type: string
+      quantity:
+        type: integer
+      price:
+        type: number
+    required:
+      - item_name
+      - quantity
+      - price
+
+  CreateInventoryPayload:
+    type: object
+    properties:
+      item_name:
+        type: string
+      quantity:
+        type: integer
+      price:
+        type: number
+    required:
+      - item_name
+      - quantity
+      - price
+
+  UpdateInventoryPayload:
+    type: object
+    properties:
+      item_name:
+        type: string
+      quantity:
+        type: integer
+      price:
+        type: number
+
+  DeleteInventoryResponse:
+    type: object
+    properties:
+      message:
+        type: string
+    required:
+      - message
+
+  AddPartToTicketPayload:
+    type: object
+    properties:
+      inventory_id:
+        type: integer
+      quantity_used:
+        type: integer
+    required:
+      - inventory_id
+
+  AddPartToTicketResponse:
+    type: object
+    properties:
+      message:
+        type: string
+    required:
+      - message
+
 
 
 
