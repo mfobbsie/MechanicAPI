@@ -3,6 +3,7 @@
 from app.extensions import ma
 from app.models import Service_Tickets, db
 from marshmallow import fields
+from app.blueprints.inventory.schemas import InventoryServiceTicketSchema
 
 class ServiceTicketSchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -15,7 +16,7 @@ class ServiceTicketSchema(ma.SQLAlchemyAutoSchema):
     customer = fields.Nested("CustomerSchema", only=("id", "name", "email"))
     mechanics = fields.Nested("MechanicSchema", many=True, only=("id", "name", "email"))
     inventory_service_tickets = fields.Nested(
-        "InventoryServiceTicketSchema",
+        InventoryServiceTicketSchema,
         many=True
     )
 

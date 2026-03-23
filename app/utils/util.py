@@ -31,9 +31,21 @@ def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
 
+        # ⭐ Allow Swagger docs to bypass token check FIRST
+        public_paths = [
+            "/api/docs",
+            "/api/docs/",
+            "/api/docs/swagger.json",
+            "/api/docs/swagger.yaml"
+        ]
+
+        if request.path in public_paths or request.path.startswith("/static/swagger"):
+            return f(*args, **kwargs)
+
         # ⭐ Allow login and register routes to bypass token check
         if request.endpoint in ("customers.login_customer", "customers.register_customer"):
             return f(*args, **kwargs)
+
 
         token = None
 

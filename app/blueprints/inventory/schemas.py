@@ -10,9 +10,6 @@ class InventoryServiceTicketSchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         sqla_session = db.session
 
-    inventory = fields.Nested("InventorySchema")
-    service_tickets = fields.Nested("ServiceTicketSchema")  # FIXED NAME
-
 
 class InventorySchema(ma.SQLAlchemyAutoSchema):
     class Meta:
@@ -20,10 +17,6 @@ class InventorySchema(ma.SQLAlchemyAutoSchema):
         load_instance = True
         sqla_session = db.session
 
-    inventory_service_tickets = fields.Nested(
-        "InventoryServiceTicketSchema",
-        many=True
-    )
 
 
 inventory_schema = InventorySchema()

@@ -89,8 +89,7 @@ paths:
           description: "Unauthorized"
         404:
           description: "Customer not found"
-
-    /customers/{customer_id}:
+          
     delete:
       tags:
         - Customers
@@ -341,7 +340,155 @@ paths:
         403:
           description: "Unauthorized"
 
- 
+  /service_tickets:
+    post:
+      tags:
+        - Service Tickets
+      summary: "Create a new service ticket"
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateServiceTicketPayload"
+          examples:
+            application/json:
+              VIN: "1HGCM82633A004352"
+              service_date: "2025-03-21"
+              description: "Oil change and tire rotation"
+              customer_id: 4
+      responses:
+        201:
+          description: "Service ticket created"
+          schema:
+            $ref: "#/definitions/ServiceTicket"
+        400:
+          description: "Validation error or duplicate VIN + date"
+
+    get:
+      tags:
+        - Service Tickets
+      summary: "Get all service tickets (paginated)"
+      parameters:
+        - in: query
+          name: page
+          type: integer
+        - in: query
+          name: per_page
+          type: integer
+      responses:
+        200:
+          description: "List of service tickets"
+          schema:
+            type: object
+            properties:
+              service_tickets:
+                type: array
+                items:
+                  $ref: "#/definitions/ServiceTicket"
+              total: { type: integer }
+              page: { type: integer }
+              per_page: { type: integer }
+              pages: { type: integer }
+              has_next: { type: boolean }
+              has_prev: { type: boolean }
+              next_page: { type: integer }
+              prev_page: { type: integer }
+
+  /service_tickets/{ticket_id}:
+    get:
+      tags:
+        - Service Tickets
+      summary: "Get a service ticket by ID"
+      parameters:
+        - in: path
+          name: ticket_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Service ticket found"
+          schema:
+            $ref: "#/definitions/ServiceTicket"
+        404:
+          description: "Service ticket not found"
+
+  /service_tickets/{ticket_id}/update:
+    put:
+      tags:
+        - Service Tickets
+      summary: "Update a service ticket"
+      parameters:
+        - in: path
+          name: ticket_id
+          required: true
+          type: integer
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/UpdateServiceTicketPayload"
+          examples:
+            application/json:
+              description: "Updated description"
+              service_date: "2025-03-22"
+      responses:
+        200:
+          description: "Service ticket updated"
+          schema:
+            $ref: "#/definitions/ServiceTicket"
+        400:
+          description: "Validation error or VIN/date conflict"
+        404:
+          description: "Service ticket not found"
+
+  /service_tickets/{ticket_id}/assign_mechanic/{mechanic_id}:
+    post:
+      tags:
+        - Service Tickets
+      summary: "Assign a mechanic to a service ticket"
+      parameters:
+        - in: path
+          name: ticket_id
+          required: true
+          type: integer
+        - in: path
+          name: mechanic_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Mechanic assigned successfully"
+          schema:
+            $ref: "#/definitions/AssignMechanicResponse"
+        400:
+          description: "Mechanic already assigned"
+        404:
+          description: "Ticket or mechanic not found"
+
+  /service_tickets/{ticket_id}/remove_mechanic/{mechanic_id}:
+    put:
+      tags:
+        - Service Tickets
+      summary: "Remove a mechanic from a service ticket"
+      parameters:
+        - in: path
+          name: ticket_id
+          required: true
+          type: integer
+        - in: path
+          name: mechanic_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Mechanic removed successfully"
+        400:
+          description: "Mechanic not assigned to this ticket"
+        404:
+          description: "Ticket or mechanic not found"
+
+
 definitions:
 
   LoginCredentials:
@@ -512,6 +659,86 @@ definitions:
       - name
       - email
       - ticket_count
+
+  ServiceTicket:
+    type: object
+    properties:
+      id:
+        type: integer
+      VIN:
+        type: string
+      service_date:
+        type: string
+        format: date
+      description:
+        type: string
+      customer_id:
+        type: integer
+      customer:
+        type: object
+        properties:
+          id: { type: integer }
+          name: { type: string }
+          email: { type: string }
+      mechanics:
+        type: array
+        items:
+          type: object
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            email: { type: string }
+      inventory_service_tickets:
+        type: array
+        items:
+          type: object
+    required:
+      - VIN
+      - service_date
+      - description
+      - customer_id
+
+  CreateServiceTicketPayload:
+    type: object
+    properties:
+      VIN:
+        type: string
+      service_date:
+        type: string
+        format: date
+      description:
+        type: string
+      customer_id:
+        type: integer
+    required:
+      - VIN
+      - service_date
+      - description
+      - customer_id
+
+  UpdateServiceTicketPayload:
+    type: object
+    properties:
+      VIN:
+        type: string
+      service_date:
+        type: string
+        format: date
+      description:
+        type: string
+      customer_id:
+        type: integer
+
+  AssignMechanicResponse:
+    type: object
+    properties:
+      message:
+        type: string
+    required:
+      - message
+
+
+
 
 
 
