@@ -30,9 +30,13 @@ def encode_token(user_id, role):
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+
+        # ⭐ Allow login and register routes to bypass token check
+        if request.endpoint in ("customers.login_customer", "customers.register_customer"):
+            return f(*args, **kwargs)
+
         token = None
 
-        # Extract token from Authorization header
         if "Authorization" in request.headers:
             parts = request.headers["Authorization"].split(" ")
             if len(parts) == 2 and parts[0].lower() == "bearer":

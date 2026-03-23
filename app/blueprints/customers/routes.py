@@ -151,33 +151,52 @@ def get_my_tickets(user_id, role):
     }), 200
 
 
-# -----------------------------
-# UPDATE CUSTOMER
-# -----------------------------
 @customers_bp.route('/<int:customer_id>', methods=['PUT'])
 @token_required
 def update_customer(user_id, role, customer_id):
-    # Customers can only update their own account
-    if role != "customer" or user_id != customer_id:
-        return jsonify({"message": "Unauthorized"}), 403
 
-    customer = db.session.get(Customer, customer_id)
-    if not customer:
-        return jsonify({"message": "Customer not found"}), 404
+    # ⭐ Admins can update any customer
+    if role == "admin":
+        customer = db.session.get(Customer, customer_id)
+        if not customer:
+            return jsonify({"message": "Customer not found"}), 404
 
-    try:
-        customer_schema.load(request.json, partial=True)
-    except ValidationError as err:
-        return jsonify(err.messages), 400
+        try:
+            customer_schema.load(request.json, partial=True)
+        except ValidationError as err:
+            return jsonify(err.messages), 400
 
-    for key, value in request.json.items():
-        if key == "password":
-            customer.password = generate_password_hash(value, method="pbkdf2:sha256")
-        else:
-            setattr(customer, key, value)
+        for key, value in request.json.items():
+            if key == "password":
+                customer.password = generate_password_hash(value, method="pbkdf2:sha256")
+            else:
+                setattr(customer, key, value)
 
-    db.session.commit()
-    return customer_schema.jsonify(customer), 200
+        db.session.commit()
+        return customer_schema.jsonify(customer), 200
+
+    # ⭐ Customers can update only themselves
+    if role == "customer" and user_id == customer_id:
+        customer = db.session.get(Customer, customer_id)
+        if not customer:
+            return jsonify({"message": "Customer not found"}), 404
+
+        try:
+            customer_schema.load(request.json, partial=True)
+        except ValidationError as err:
+            return jsonify(err.messages), 400
+
+        for key, value in request.json.items():
+            if key == "password":
+                customer.password = generate_password_hash(value, method="pbkdf2:sha256")
+            else:
+                setattr(customer, key, value)
+
+        db.session.commit()
+        return customer_schema.jsonify(customer), 200
+
+    # ⭐ Everyone else → unauthorized
+    return jsonify({"message": "Unauthorized"}), 403
 
 # -----------------------------
 # DELETE CUSTOMER
@@ -185,18 +204,32 @@ def update_customer(user_id, role, customer_id):
 @customers_bp.route('/<int:customer_id>', methods=['DELETE'])
 @token_required
 def delete_customer(user_id, role, customer_id):
-    # Customers can only delete their own account
-    if role != "customer" or user_id != customer_id:
-        return jsonify({"message": "Unauthorized"}), 403
 
-    customer = db.session.get(Customer, customer_id)
-    if not customer:
-        return jsonify({"message": "Customer not found"}), 404
+    # ⭐ Admins can delete any customer
+    if role == "admin":
+        customer = db.session.get(Customer, customer_id)
+        if not customer:
+            return jsonify({"message": "Customer not found"}), 404
 
-    if customer.service_tickets:
-        return jsonify({"message": "Cannot delete customer with existing service tickets"}), 400
+        if customer.service_tickets:
+            return jsonify({"message": "Cannot delete customer with existing service tickets"}), 400
 
-    db.session.delete(customer)
-    db.session.commit()
+        db.session.delete(customer)
+        db.session.commit()
+        return jsonify({"message": f"Customer {customer_id} deleted successfully"}), 200
 
-    return jsonify({"message": f"Customer {customer_id} deleted successfully"}), 200
+    # ⭐ Customers can delete ONLY themselves
+    if role == "customer" and user_id == customer_id:
+        customer = db.session.get(Customer, customer_id)
+        if not customer:
+            return jsonify({"message": "Customer not found"}), 404
+
+        if customer.service_tickets:
+            return jsonify({"message": "Cannot delete customer with existing service tickets"}), 400
+
+        db.session.delete(customer)
+        db.session.commit()
+        return jsonify({"message": "Your account has been deleted"}), 200
+
+    # ⭐ Everyone else → unauthorized
+    return jsonify({"message": "Unauthorized"}), 403

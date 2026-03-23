@@ -223,32 +223,29 @@ definitions:
         type: string
       email:
         type: string
-      DOB:
-        type: string
-        format: date
       phone:
         type: string
     required:
       - id
       - name
       - email
+      - phone
 
   CreateCustomerPayload:
     type: object
     properties:
       name:
         type: string
+      phone:
+        type: string
       email:
         type: string
-      DOB:
-        type: string
-        format: date
       password:
         type: string
     required:
       - name
+      - phone
       - email
-      - DOB
       - password
 
   CreateCustomerResponse:
@@ -260,14 +257,14 @@ definitions:
         type: string
       email:
         type: string
-      DOB:
+      phone:
         type: string
-        format: date
     required:
       - id
       - name
       - email
-
+      - phone
+      
   DeleteCustomerResponse:
     type: object
     properties:
