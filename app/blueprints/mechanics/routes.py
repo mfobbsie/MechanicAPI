@@ -187,18 +187,33 @@ def popular_mechanics(user_id, role):
 @mechanics_bp.route('/', methods=['PUT'])
 @token_required
 def update_mechanic(user_id, role):
-    if role != "mechanic":
+
+    # ⭐ Admins can update ANY mechanic (must specify mechanic_id in body)
+    if role == "admin":
+        mechanic_id = request.json.get("id")
+        if not mechanic_id:
+            return jsonify({"message": "Mechanic ID required for admin update"}), 400
+
+        mechanic = db.session.get(Mechanic, mechanic_id)
+        if not mechanic:
+            return jsonify({"message": "Mechanic not found"}), 404
+
+    # ⭐ Mechanics can update ONLY themselves
+    elif role == "mechanic":
+        mechanic = db.session.get(Mechanic, user_id)
+        if not mechanic:
+            return jsonify({"message": "Mechanic not found"}), 404
+
+    else:
         return jsonify({"message": "Unauthorized"}), 403
 
-    mechanic = db.session.get(Mechanic, user_id)
-    if not mechanic:
-        return jsonify({"message": "Mechanic not found"}), 404
-
+    # Load + validate
     try:
         mechanic_schema.load(request.json, partial=True)
     except ValidationError as err:
         return jsonify(err.messages), 400
 
+    # Apply updates
     for key, value in request.json.items():
         if key == "password":
             mechanic.password = generate_password_hash(value)
@@ -207,7 +222,6 @@ def update_mechanic(user_id, role):
 
     db.session.commit()
     return mechanic_schema.jsonify(mechanic), 200
-
 
 # -----------------------------
 # DELETE MECHANIC (ADMIN ONLY)
@@ -225,4 +239,4 @@ def delete_mechanic(user_id, role, mechanic_id):
     db.session.delete(mechanic)
     db.session.commit()
 
-    return jsonify({"message": "Mechanic deleted successfully"}), 200
+    return jsonify({"message": f"Mechanic {mechanic_id} deleted successfully"}), 200

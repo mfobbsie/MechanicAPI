@@ -233,7 +233,8 @@ paths:
     put:
       tags:
         - Mechanics
-      summary: "Update mechanic profile (Mechanic only)"
+      summary: "Update mechanic profile (Mechanic or Admin)"
+      description: "Mechanics may update their own profile. Admins may update any mechanic by including the mechanic ID in the request body."
       security:
         - bearerAuth: []
       parameters:
@@ -244,6 +245,7 @@ paths:
             $ref: "#/definitions/CreateMechanicPayload"
           examples:
             application/json:
+              id: 3
               phone: "555-999-8888"
               password: "newPassword123"
               salary: 75000
@@ -256,7 +258,6 @@ paths:
           description: "Unauthorized"
         404:
           description: "Mechanic not found"
-
 
   /mechanics/{mechanic_id}:
     get:
@@ -290,6 +291,8 @@ paths:
       responses:
         200:
           description: "Mechanic deleted successfully"
+          schema:
+            $ref: "#/definitions/DeleteMechanicResponse"
         403:
           description: "Unauthorized"
         404:
