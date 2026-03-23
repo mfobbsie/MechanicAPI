@@ -137,56 +137,208 @@ paths:
           schema:
             $ref: "#/definitions/LoginResponse"
 
-    
-  /service_tickets:
-    get:
-      summary: "Get all service tickets"
-      responses:
-        200:
-          description: "A list of service tickets"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Service_Ticket"
+  /mechanics/login:
     post:
-      summary: "Create a new service ticket"
+      tags:
+        - Mechanics
+      summary: "Mechanic login"
+      description: "Authenticate a mechanic and return a JWT token."
       parameters:
-        - in: "body"
-          name: "service_ticket"
-          description: "Service ticket object that needs to be added"
+        - in: body
+          name: body
           required: true
           schema:
-            $ref: "#/definitions/Service_Ticket"
+            $ref: "#/definitions/MechanicLoginPayload"
+          examples:
+            application/json:
+              email: "mechanic1@example.com"
+              password: "1234"
       responses:
-        201:
-          description: "Service ticket created successfully"
-        400:
-          description: "Invalid input"
+        200:
+          description: "Login successful"
+          schema:
+            $ref: "#/definitions/MechanicLoginResponse"
+        401:
+          description: "Invalid email or password"
+
+
   /mechanics:
-    get:
-      summary: "Get all mechanics"
-      responses:
-        200:
-          description: "A list of mechanics"
-          schema:
-            type: "array"
-            items:
-              $ref: "#/definitions/Mechanic"
     post:
-      summary: "Create a new mechanic"
+      tags:
+        - Mechanics
+      summary: "Create a new mechanic (Admin only)"
+      security:
+        - bearerAuth: []
       parameters:
-        - in: "body"
-          name: "mechanic"
-          description: "Mechanic object that needs to be added"
+        - in: body
+          name: body
           required: true
           schema:
-            $ref: "#/definitions/Mechanic"
+            $ref: "#/definitions/CreateMechanicPayload"
+          examples:
+            application/json:
+              name: "Jordan Smith"
+              phone: "555-123-9876"
+              email: "jordan.smith@example.com"
+              password: "securePass123"
+              salary: 72000
       responses:
         201:
           description: "Mechanic created successfully"
+          schema:
+            $ref: "#/definitions/Mechanic"
         400:
-          description: "Invalid input"  
+          description: "Validation error or duplicate email"
+        403:
+          description: "Unauthorized"
 
+    get:
+      tags:
+        - Mechanics
+      summary: "Get all mechanics (paginated)"
+      parameters:
+        - in: query
+          name: page
+          type: integer
+        - in: query
+          name: per_page
+          type: integer
+      responses:
+        200:
+          description: "List of mechanics"
+          schema:
+            type: object
+            properties:
+              mechanics:
+                type: array
+                items:
+                  $ref: "#/definitions/Mechanic"
+              total:
+                type: integer
+              page:
+                type: integer
+              per_page:
+                type: integer
+              pages:
+                type: integer
+              has_next:
+                type: boolean
+              has_prev:
+                type: boolean
+              next_page:
+                type: integer
+              prev_page:
+                type: integer
+
+    put:
+      tags:
+        - Mechanics
+      summary: "Update mechanic profile (Mechanic only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateMechanicPayload"
+          examples:
+            application/json:
+              phone: "555-999-8888"
+              password: "newPassword123"
+              salary: 75000
+      responses:
+        200:
+          description: "Mechanic updated"
+          schema:
+            $ref: "#/definitions/Mechanic"
+        403:
+          description: "Unauthorized"
+        404:
+          description: "Mechanic not found"
+
+
+  /mechanics/{mechanic_id}:
+    get:
+      tags:
+        - Mechanics
+      summary: "Get mechanic by ID"
+      parameters:
+        - in: path
+          name: mechanic_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Mechanic found"
+          schema:
+            $ref: "#/definitions/Mechanic"
+        404:
+          description: "Mechanic not found"
+
+    delete:
+      tags:
+        - Mechanics
+      summary: "Delete mechanic (Admin only)"
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: mechanic_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "Mechanic deleted successfully"
+        403:
+          description: "Unauthorized"
+        404:
+          description: "Mechanic not found"
+
+
+  /mechanics/{mechanic_id}/service_tickets:
+    get:
+      tags:
+        - Mechanics
+      summary: "Get all service tickets assigned to a mechanic"
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: mechanic_id
+          required: true
+          type: integer
+      responses:
+        200:
+          description: "List of service tickets"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/ServiceTicket"
+        403:
+          description: "Unauthorized"
+        404:
+          description: "Mechanic not found"
+
+
+  /mechanics/popular:
+    get:
+      tags:
+        - Mechanics
+      summary: "Get mechanics ranked by number of service tickets (Admin only)"
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: "List of mechanics with ticket counts"
+          schema:
+            type: array
+            items:
+              $ref: "#/definitions/PopularMechanicResponse"
+        403:
+          description: "Unauthorized"
+
+ 
 definitions:
 
   LoginCredentials:
@@ -273,23 +425,90 @@ definitions:
     required:
       - message
 
-  Service_Ticket:
-    type: "object"
-    properties:
-      id:
-        type: "integer"
-      description:
-        type: "string"
-      customer_id:
-        type: "integer"
-      mechanic_id:
-        type: "integer"
   Mechanic:
-    type: "object"
+    type: object
     properties:
       id:
-        type: "integer"
+        type: integer
       name:
-        type: "string"
-      specialty:
-        type: "string"
+        type: string
+      phone:
+        type: string
+      email:
+        type: string
+      salary:
+        type: number
+      role_id:
+        type: integer
+    required:
+      - id
+      - name
+      - phone
+      - email
+      - salary
+      - role_id
+
+  CreateMechanicPayload:
+    type: object
+    properties:
+      name:
+        type: string
+      phone:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      salary:
+        type: number
+    required:
+      - name
+      - phone
+      - email
+      - password
+      - salary
+
+  MechanicLoginPayload:
+    type: object
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+      - email
+      - password
+
+  MechanicLoginResponse:
+    type: object
+    properties:
+      status:
+        type: string
+      message:
+        type: string
+      auth_token:
+        type: string
+    required:
+      - status
+      - message
+      - auth_token
+
+  PopularMechanicResponse:
+    type: object
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      email:
+        type: string
+      ticket_count:
+        type: integer
+    required:
+      - id
+      - name
+      - email
+      - ticket_count
+
+
+
