@@ -32,13 +32,20 @@ def token_required(f):
     def decorated(*args, **kwargs):
         print("REQUEST PATH:", request.path)
 
-        # ⭐ Public routes
+        # ⭐ Public + Swagger routes
         if (
             request.path.startswith("/api/docs") or
             request.path.startswith("/static/") or
-            request.path in ("/customers/login", "/customers/register", "/mechanics/login", "/")
+            request.path.endswith("swagger.json") or
+            request.path in (
+                "/customers/login",
+                "/customers/register",
+                "/mechanics/login",
+                "/"
+            )
         ):
             return f(*args, **kwargs)
+
             
         # ⭐ Token extraction
         token = None

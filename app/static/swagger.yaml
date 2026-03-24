@@ -877,6 +877,13 @@ definitions:
     required:
       - message
 
+DeleteMechanicResponse:
+  type: object
+  properties:
+    message:
+      type: string
+
+
   Inventory:
     type: object
     properties:
