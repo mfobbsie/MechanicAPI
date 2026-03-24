@@ -5,7 +5,7 @@ info:
   title: "Mechanics API"
   description: "This is an API for managing mechanics and service tickets"
   version: "1.0.0"
-host: "mechanicapi-d75e.onrender.com/"
+host: "mechanicapi-d75e.onrender.com"
 schemes:
   - "https"
 consumes:
