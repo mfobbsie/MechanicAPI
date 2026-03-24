@@ -4,10 +4,6 @@ on:
   push:
     branches: [main, master]
 
-defaults:
-  run:
-    working-directory: MechanicAPI   # <-- FIX HERE
-
 jobs:
   build:
     runs-on: ubuntu-latest
