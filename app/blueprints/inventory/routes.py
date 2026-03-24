@@ -16,6 +16,7 @@ from app.blueprints.service_tickets import service_tickets_bp
 # CREATE INVENTORY ITEM
 # ----------------------------------------
 @inventory_bp.route('', methods=['POST'])
+@inventory_bp.route('/', methods=['POST'])
 def create_inventory_item():
     data = request.get_json()
 
@@ -35,6 +36,7 @@ def create_inventory_item():
 # GET ALL INVENTORY ITEMS (PAGINATED)
 # ----------------------------------------
 @inventory_bp.route('', methods=['GET'])
+@inventory_bp.route('/', methods=['GET'])
 def get_inventory():
     page = request.args.get("page", 1, type=int)
     per_page = request.args.get("per_page", 10, type=int)

@@ -51,6 +51,7 @@ def login_customer():
 # CREATE CUSTOMER
 # -----------------------------
 @customers_bp.route('', methods=['POST'])
+@customers_bp.route('/', methods=['POST'])
 def create_customer():
     try:
         customer_data = customer_schema.load(request.json)
@@ -93,6 +94,7 @@ def create_customer():
 # GET ALL CUSTOMERS (PAGINATED)
 # -----------------------------
 @customers_bp.route('', methods=['GET'])
+@customers_bp.route('/', methods=['GET'])
 @cache.cached(timeout=60, query_string=True, unless=lambda: "Authorization" in request.headers)
 
 def get_customers():

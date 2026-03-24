@@ -12,6 +12,7 @@ from app.extensions import limiter, cache
 # CREATE SERVICE TICKET
 # -----------------------------
 @service_tickets_bp.route('', methods=['POST'])
+@service_tickets_bp.route('/', methods=['POST'])
 def create_service_ticket():
     try:
         ticket_data = service_ticket_schema.load(request.json)
@@ -41,6 +42,7 @@ def create_service_ticket():
 # GET ALL SERVICE TICKETS
 # -----------------------------
 @service_tickets_bp.route('', methods=['GET'])
+@service_tickets_bp.route('/', methods=['GET'])
 @cache.cached(timeout=60, query_string=True, unless=lambda: "Authorization" in request.headers)
 def get_service_tickets():
     # Read pagination params

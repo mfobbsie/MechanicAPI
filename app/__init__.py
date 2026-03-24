@@ -1,6 +1,6 @@
 # app/__init__.py
 
-from flask import Flask
+from flask import Flask, app
 from app.models import db
 from app.extensions import ma, limiter, cache, migrate
 from app.blueprints.customers import customers_bp
@@ -11,7 +11,6 @@ from app.cli import register_cli
 from flask_swagger_ui import get_swaggerui_blueprint
 
 def create_app(config_name="Config"):
-    # Swagger UI
     SWAGGER_URL = '/api/docs'
     API_URL = '/static/swagger.yaml'
     swaggerui_blueprint = get_swaggerui_blueprint(
@@ -21,8 +20,6 @@ def create_app(config_name="Config"):
     )
 
     app = Flask(__name__)
-
-    # ⭐ Load config dynamically
     app.config.from_object(f"app.config.{config_name}")
 
     # Initialize extensions
@@ -32,28 +29,16 @@ def create_app(config_name="Config"):
     cache.init_app(app)
     migrate.init_app(app, db)
 
-    # Import models AFTER db.init_app
-    from app.models import (
-        Customer,
-        Mechanic,
-        Service_Tickets,
-        Inventory,
-        Inventory_Service_Ticket,
-        Role
-    )
-
-    # Create tables
-    with app.app_context():
-        db.create_all()
-
-    # Register CLI commands
-    register_cli(app)
-
     # Register blueprints
     app.register_blueprint(customers_bp, url_prefix="/customers")
     app.register_blueprint(mechanics_bp, url_prefix="/mechanics")
     app.register_blueprint(service_tickets_bp, url_prefix="/service_tickets")
     app.register_blueprint(inventory_bp, url_prefix="/inventory")
     app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+    # ⭐ Exempt all Swagger UI routes
+    for rule in app.url_map.iter_rules():
+        if rule.rule.startswith("/api/docs"):
+            limiter.exempt(app.view_functions[rule.endpoint])
 
     return app

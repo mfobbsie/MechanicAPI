@@ -30,25 +30,18 @@ def encode_token(user_id, role):
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        print("REQUEST PATH:", request.path)
 
-        # ⭐ Allow Swagger docs to bypass token check FIRST
-        public_paths = [
-            "/api/docs",
-            "/api/docs/",
-            "/api/docs/swagger.json",
-            "/api/docs/swagger.yaml"
-        ]
-
-        if request.path in public_paths or request.path.startswith("/static/swagger"):
+        # ⭐ Public routes
+        if (
+            request.path.startswith("/api/docs") or
+            request.path.startswith("/static/") or
+            request.path in ("/customers/login", "/customers/register", "/mechanics/login", "/")
+        ):
             return f(*args, **kwargs)
-
-        # ⭐ Allow login and register routes to bypass token check
-        if request.endpoint in ("customers.login_customer", "customers.register_customer"):
-            return f(*args, **kwargs)
-
-
+            
+        # ⭐ Token extraction
         token = None
-
         if "Authorization" in request.headers:
             parts = request.headers["Authorization"].split(" ")
             if len(parts) == 2 and parts[0].lower() == "bearer":
