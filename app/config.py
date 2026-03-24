@@ -47,4 +47,5 @@ class TestingConfig(Config):
 class ProductionConfig(Config):
     DEBUG = False
     TESTING = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL", "mysql+mysqlconnector://root:ellietteGrace22@localhost/mechanic_db")
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    CACHE_TYPE = "SimpleCache"

@@ -6,9 +6,10 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from app.models import Base  # SQLAlchemy 2.0 Declarative Base
+from app.models import db
 from app import create_app
 
+DATABASE_URL = "postgresql://mechanics:ycsP6loD0XAMA6KSLI8xlg5N0nuxDc8Y@dpg-d711c1juibrs739lef10-a.oregon-postgres.render.com/mechanic_api_z3vk"
 
 # -----------------------------
 # Load Flask app + config
@@ -23,7 +24,7 @@ if config.config_file_name is not None:
 # -----------------------------
 # Set target metadata
 # -----------------------------
-target_metadata = Base.metadata
+target_metadata = db.metadata
 
 
 # -----------------------------
@@ -41,7 +42,6 @@ def run_migrations_offline():
 
     with context.begin_transaction():
         context.run_migrations()
-
 
 # -----------------------------
 # Run migrations online
