@@ -2,16 +2,12 @@
 
 import os
 
-
 class Config:
     # -----------------------------------------
     # Database Configuration
     # -----------------------------------------
     SQLALCHEMY_DATABASE_URI = (
-        os.environ.get(
-            "DATABASE_URL",
-            "mysql+mysqlconnector://root:ellietteGrace22@localhost/mechanic_db"
-        )
+        os.environ.get('DATABASE_URL')
     )
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False  # prevents overhead + warnings
