@@ -7,7 +7,8 @@ info:
   version: "1.0.0"
 host: "mechanicapi-d75e.onrender.com"
 schemes:
-  - "https"
+  - https
+basePath: "/"
 consumes:
   - "application/json"
 produces:
