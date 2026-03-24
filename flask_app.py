@@ -1,4 +1,4 @@
-# run.py
+# flask_app.py
 
 from app import create_app
 

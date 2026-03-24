@@ -11,8 +11,6 @@ from app.cli import register_cli
 from flask_swagger_ui import get_swaggerui_blueprint
 
 def create_app(config_name="Config"):
-    
-
     SWAGGER_URL = '/api/docs'
     API_URL = '/static/swagger.yaml'
     swaggerui_blueprint = get_swaggerui_blueprint(
@@ -21,7 +19,14 @@ def create_app(config_name="Config"):
         config={'app_name': "Mechanics API"}
     )
 
-    app = Flask(__name__, static_folder="../static")
+    import os
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    STATIC_DIR = os.path.join(BASE_DIR, "..", "static")
+
+    app = Flask(
+        __name__, 
+        static_folder=STATIC_DIR,
+        static_url_path='/static')
     app.config.from_object(f"app.config.{config_name}")
 
     # Initialize extensions
