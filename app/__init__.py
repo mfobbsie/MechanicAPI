@@ -1,6 +1,6 @@
 # app/__init__.py
 
-from flask import Flask, app
+from flask import Flask
 from app.models import db
 from app.extensions import ma, limiter, cache, migrate
 from app.blueprints.customers import customers_bp
@@ -11,7 +11,7 @@ from app.cli import register_cli
 from flask_swagger_ui import get_swaggerui_blueprint
 
 def create_app(config_name="Config"):
-    print("STATIC FOLDER:", app.static_folder)
+    
 
     SWAGGER_URL = '/api/docs'
     API_URL = '/static/swagger.yaml'
