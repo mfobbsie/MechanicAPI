@@ -21,7 +21,7 @@ def create_app(config_name="Config"):
         config={'app_name': "Mechanics API"}
     )
 
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder="../static")
     app.config.from_object(f"app.config.{config_name}")
 
     # Initialize extensions
