@@ -1,4 +1,4 @@
-#app/static/swagger.yaml
+#static/swagger.yaml
 
 swagger: '2.0'
 info:

@@ -11,6 +11,8 @@ from app.cli import register_cli
 from flask_swagger_ui import get_swaggerui_blueprint
 
 def create_app(config_name="Config"):
+    print("STATIC FOLDER:", app.static_folder)
+
     SWAGGER_URL = '/api/docs'
     API_URL = '/static/swagger.yaml'
     swaggerui_blueprint = get_swaggerui_blueprint(
